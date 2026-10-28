@@ -8,77 +8,57 @@ namespace HomeExercise.Tasks.NumberValidator;
 [TestFixture]
 public class NumberValidatorTests
 {
-
-    [TestCase(0, 0, false, TestName = "Ctor: precision=0 недопустим")]
-    [TestCase(-1, 0, false, TestName = "Ctor: precision<0 недопустим")]
-    [TestCase(2, -1, false, TestName = "Ctor: scale<0 недопустим")]
-    [TestCase(2, 2, false, TestName = "Ctor: scale==precision недопустим")]
-    public void Ctor_InvalidArguments_Throws(int precision, int scale, bool onlyPositive)
+    //я выделил табами новые тесты (для вашего удобства, чтобы с прошлой версией не сранивать)
+        [TestCase(0, 1, TestName = "precision={0}, scale={1}")]
+        [TestCase(2, 3, TestName = "precision={0}, scale={1}")]
+    [TestCase(-1, 0, TestName = "precision={0}, scale={1}")]
+    [TestCase(2, -1, TestName = "precision={0}, scale={1}")]
+    [TestCase(2, 2, TestName = "precision={0}, scale={1}")]
+    public void NumberValidator_InvalidArguments_Throws(int precision, int scale)
     {
-        Action act = () => new NumberValidator(precision, scale, onlyPositive);
+        Action act = () => new NumberValidator(precision, scale, onlyPositive: false);
 
-        act.Should().Throw<ArgumentException>(
-            because: $"precision={precision}, scale={scale} недопустимы");
+        act.Should().Throw<ArgumentException>();
     }
 
-    [TestCase(17, 2, true, TestName = "Ctor: валидные аргументы не бросают")]
-    public void Ctor_ValidArguments_DoesNotThrow(int precision, int scale, bool onlyPositive)
-    {
-        Action act = () => new NumberValidator(precision, scale, onlyPositive);
-
-        act.Should().NotThrow(
-            because: $"precision={precision}, scale={scale} допустимы");
-    }
-
-    [TestCase(17, 2, true, "123", TestName = "Valid: целое '123'")]
-    [TestCase(17, 2, true, "0.0", TestName = "Valid: с дробью '0.0'")]
-    [TestCase(17, 2, true, "1,23", TestName = "Valid: запятая '1,23'")]
-    [TestCase(17, 2, true, "+1.23", TestName = "Valid: явный плюс '+1.23'")]
-    [TestCase(17, 2, false, "-1.23", TestName = "Valid: отрицательное при onlyPositive=false")]
-    [TestCase(5, 2, true, "123.45", TestName = "Valid: ровно на границе precision")]
+        [TestCase(17, false, "-123", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+        [TestCase(4, true, "+1.23", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+        [TestCase(4, true, "1234", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(17, true, "123", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(17, true, "0.0", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(17, true, "1,23", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(17, true, "+1.23", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(17, false, "-1.23", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
+    [TestCase(5, true, "123.45", TestName = "value=\"{2}\", precision={0}, onlyPositive={1}")]
     public void IsValidNumber_ValidValues_ReturnsTrue(
-        int precision, int scale, bool onlyPositive, string value)
+        int precision, bool onlyPositive, string value)
     {
-        var validator = new NumberValidator(precision, scale, onlyPositive);
+        var validator = new NumberValidator(precision, scale: 2, onlyPositive);
 
-        validator.IsValidNumber(value).Should().BeTrue(
-            because: $"'{value}' должен быть валиден при precision={precision}, scale={scale}, onlyPositive={onlyPositive}");
+        validator.IsValidNumber(value).Should().BeTrue();
     }
 
-   [TestCase(17, 2, true, null, TestName = "Invalid: null")]
-    [TestCase(17, 2, true, "", TestName = "Invalid: пустая строка")]
-    [TestCase(17, 2, true, "a.sd", TestName = "Invalid: не число 'a.sd'")]
-    [TestCase(3, 2, true, "1234", TestName = "Invalid: превышение precision '1234'")]
-    [TestCase(17, 2, true, "0.000", TestName = "Invalid: превышение scale '0.000'")]
-    [TestCase(17, 2, true, "-1.23", TestName = "Invalid: отрицательное при onlyPositive=true")]
-    public void IsValidNumber_InvalidValues_ReturnsFalse(
-        int precision, int scale, bool onlyPositive, string value)
+        [TestCase(17, null, TestName = "value=null, precision={0}")]
+        [TestCase(17, "-123", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "-0.0", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(4, "+1234", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, " 123", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "123 ", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "1 23", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "1. 23", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "\t123", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "123\n", TestName = "value=\"{1}\", precision={0}")] //не проходит. Чисто теоретически, так и надо
+        [TestCase(17, "123\r\n", TestName = "value=\"{1}\", precision={0}")]
+        [TestCase(17, "123\r", TestName = "value=\"{1}\", precision={0}")]
+    [TestCase(17, "", TestName = "value=\"{1}\", precision={0}")]
+    [TestCase(17, "a.sd", TestName = "value=\"{1}\", precision={0}")]
+    [TestCase(3, "1234", TestName = "value=\"{1}\", precision={0}")]
+    [TestCase(17, "0.000", TestName = "value=\"{1}\", precision={0}")]
+    [TestCase(17, "-1.23", TestName = "value=\"{1}\", precision={0}")]
+    public void IsValidNumber_InvalidValues_ReturnsFalse(int precision, string value)
     {
-        var validator = new NumberValidator(precision, scale, onlyPositive);
+        var validator = new NumberValidator(precision, scale: 2, onlyPositive: true);
 
-        validator.IsValidNumber(value).Should().BeFalse(
-            because: $"'{value}' не должен быть валиден при precision={precision}, scale={scale}, onlyPositive={onlyPositive}");
+        validator.IsValidNumber(value).Should().BeFalse();
     }
-
-    //[Test]
-    //public void Test()
-    //{
-    //    Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, true));
-    //    Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
-    //    Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, false));
-    //    Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
-
-    //    ClassicAssert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-    //    ClassicAssert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0"));
-    //    ClassicAssert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("00.00"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-0.00"));
-    //    ClassicAssert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+0.00"));
-    //    ClassicAssert.IsTrue(new NumberValidator(4, 2, true).IsValidNumber("+1.23"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+1.23"));
-    //    ClassicAssert.IsFalse(new NumberValidator(17, 2, true).IsValidNumber("0.000"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-1.23"));
-    //    ClassicAssert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("a.sd"));
-    //}
 }
